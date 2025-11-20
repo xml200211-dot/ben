@@ -1,0 +1,6 @@
+# requirements.txt
+selenium
+chromedriver-autoinstaller
+requests
+user-agent
+beautifulsoup4
