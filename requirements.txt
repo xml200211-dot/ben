@@ -1,3 +1,2 @@
 python-telegram-bot
-groq
-# version 1.1
+httpx
