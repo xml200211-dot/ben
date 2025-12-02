@@ -1,5 +1,6 @@
 import telegram
-from telegram.ext import Application, CommandHandler, MessageHandler, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, CallbackQueryHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import asyncio
 import http.server
 import socketserver
@@ -12,9 +13,14 @@ TELEGRAM_BOT_TOKEN = "1936058114:AAHm19u1R6lv_vShGio-MIo4Z0rjVUoew_U"
 ADMIN_CHAT_ID = 1148797883
 GROQ_API_KEY = "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"
 
+# --- متغيرات عالمية ---
+available_models = []
+selected_model = None
+client = None
+
 # --- إعدادات خادم الويب ---
 PORT = int(os.environ.get("PORT", 8080))
-# ... (بقية كود خادم الويب يبقى كما هو) ...
+
 class KeepAliveHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -27,35 +33,74 @@ def run_keep_alive_server():
         print(f"✅ خادم الويب يعمل على المنفذ {PORT} لإبقاء البوت حياً.")
         httpd.serve_forever()
 
-# --- إعدادات الذكاء الاصطناعي ---
-try:
-    client = Groq(api_key=GROQ_API_KEY)
-    print("✅ تم الاتصال بـ Groq بنجاح.")
-except Exception as e:
-    print(f"❌ فشل الاتصال بـ Groq: {e}")
-    client = None
+# --- وظائف الذكاء الاصطناعي ---
+def initialize_ai():
+    global client, available_models
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
+        model_list = client.models.list().data
+        # فلترة للحصول على النماذج التي تدعم الدردشة فقط
+        available_models = sorted([m.id for m in model_list if "tool_use" not in m.id])
+        print(f"✅ تم جلب النماذج المتاحة بنجاح: {available_models}")
+    except Exception as e:
+        print(f"❌ فشل الاتصال بـ Groq أو جلب النماذج: {e}")
+        client = None
+        available_models = []
 
 # --- تعريف أوامر البوت ---
+
 async def start_command(update, context):
     user_id = update.message.from_user.id
-    if user_id == ADMIN_CHAT_ID:
-        welcome_message = "مرحباً سيدي مهدي، أنا جاهز لتنفيذ أي شيء تريده."
-        await update.message.reply_text(welcome_message)
-        print("✅ تم إرسال الرسالة الترحيبية إلى المدير.")
-    else:
-        print(f"⚠️ تم استلام رسالة من مستخدم غير مصرح به: {user_id}")
+    if user_id != ADMIN_CHAT_ID:
+        return
+
+    global selected_model
+    selected_model = None # إعادة تعيين النموذج المختار عند كل /start
+
+    welcome_message = f"مرحباً سيدي مهدي، أنا جاهز.\n\n"
+    
+    if not available_models:
+        await update.message.reply_text(welcome_message + "⚠️ لم أتمكن من العثور على أي نماذج ذكاء اصطناعي متاحة. الرجاء التحقق من مفتاح Groq.")
+        return
+
+    keyboard = []
+    for model_id in available_models:
+        # نقترح النموذج الأقوى إذا كان متاحاً
+        button_text = f"🧠 {model_id}"
+        if "llama3-70b" in model_id:
+            button_text = f"🏆 {model_id} (الأقوى)"
+        elif "llama3-8b" in model_id:
+            button_text = f"⚡️ {model_id} (الأسرع)"
+        elif "gemma" in model_id:
+            button_text = f"💡 {model_id} (جوجل)"
+        elif "mixtral" in model_id:
+            button_text = f"⚙️ {model_id} (متعدد الاستخدامات)"
+            
+        keyboard.append([InlineKeyboardButton(button_text, callback_data=model_id)])
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(welcome_message + "الرجاء اختيار 'الدماغ' الذي تريد استخدامه:", reply_markup=reply_markup)
+
+async def button_handler(update, context):
+    global selected_model
+    query = update.callback_query
+    await query.answer()
+    
+    selected_model = query.data
+    await query.edit_message_text(text=f"✅ تم اختيار الدماغ: **{selected_model}**\n\nأنا الآن جاهز لاستقبال أسئلتك.")
+    print(f"🧠 تم اختيار النموذج: {selected_model}")
 
 async def handle_message(update, context):
     user_id = update.message.from_user.id
     if user_id != ADMIN_CHAT_ID:
         return
 
-    if not client:
-        await update.message.reply_text("عذراً، لا يمكنني الاتصال بدماغ الذكاء الاصطناعي حالياً.")
+    if not selected_model:
+        await update.message.reply_text("الرجاء اختيار دماغ أولاً باستخدام الأمر /start.")
         return
 
     question = update.message.text
-    print(f"🧠 تم استلام سؤال: '{question}'")
+    print(f"🧠 تم استلام سؤال للنموذج {selected_model}: '{question}'")
     
     thinking_message = await update.message.reply_text("⏳ أفكر في طلبك...")
 
@@ -71,8 +116,7 @@ async def handle_message(update, context):
                     "content": question,
                 }
             ],
-            #  ***** التغيير الوحيد والمهم هنا *****
-            model="llama3-70b-8192", 
+            model=selected_model,
         )
         response = chat_completion.choices[0].message.content
         print(f"🤖 تم إنشاء إجابة: '{response[:50]}...'")
@@ -85,8 +129,11 @@ async def handle_message(update, context):
         await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=thinking_message.message_id, text=error_message)
 
 # --- التشغيل الرئيسي ---
+
 def main():
     print("⏳ جاري تشغيل البوت...")
+    
+    initialize_ai()
 
     keep_alive_thread = threading.Thread(target=run_keep_alive_server)
     keep_alive_thread.daemon = True
@@ -95,6 +142,7 @@ def main():
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
 
     application.add_handler(CommandHandler("start", start_command))
+    application.add_handler(CallbackQueryHandler(button_handler))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     print("✅ البوت يعمل الآن وجاهز لاستقبال الأوامر.")
