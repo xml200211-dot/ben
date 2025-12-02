@@ -8,19 +8,13 @@ import os
 from groq import Groq
 
 # --- الإعدادات ---
-# الصق توكن بوت تيليجرام الخاص بك هنا
 TELEGRAM_BOT_TOKEN = "1936058114:AAHm19u1R6lv_vShGio-MIo4Z0rjVUoew_U"
-
-# الصق معرف تيليجرام الخاص بك هنا (يجب أن يكون رقماً)
 ADMIN_CHAT_ID = 1148797883
-
-# الصق مفتاح Groq API الخاص بك هنا
 GROQ_API_KEY = "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"
 
-
-# --- إعدادات خادم الويب (للتوافق مع Render) ---
+# --- إعدادات خادم الويب ---
 PORT = int(os.environ.get("PORT", 8080))
-
+# ... (بقية كود خادم الويب يبقى كما هو) ...
 class KeepAliveHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -42,7 +36,6 @@ except Exception as e:
     client = None
 
 # --- تعريف أوامر البوت ---
-
 async def start_command(update, context):
     user_id = update.message.from_user.id
     if user_id == ADMIN_CHAT_ID:
@@ -55,7 +48,7 @@ async def start_command(update, context):
 async def handle_message(update, context):
     user_id = update.message.from_user.id
     if user_id != ADMIN_CHAT_ID:
-        return # نتجاهل الرسائل من المستخدمين الآخرين
+        return
 
     if not client:
         await update.message.reply_text("عذراً، لا يمكنني الاتصال بدماغ الذكاء الاصطناعي حالياً.")
@@ -64,7 +57,6 @@ async def handle_message(update, context):
     question = update.message.text
     print(f"🧠 تم استلام سؤال: '{question}'")
     
-    # إرسال رسالة "جاري التفكير..."
     thinking_message = await update.message.reply_text("⏳ أفكر في طلبك...")
 
     try:
@@ -79,12 +71,12 @@ async def handle_message(update, context):
                     "content": question,
                 }
             ],
-            model="llama3-8b-8192",
+            #  ***** التغيير الوحيد والمهم هنا *****
+            model="llama3-70b-8192", 
         )
         response = chat_completion.choices[0].message.content
         print(f"🤖 تم إنشاء إجابة: '{response[:50]}...'")
         
-        # تعديل الرسالة بالإجابة النهائية
         await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=thinking_message.message_id, text=response)
 
     except Exception as e:
@@ -92,9 +84,7 @@ async def handle_message(update, context):
         print(error_message)
         await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=thinking_message.message_id, text=error_message)
 
-
 # --- التشغيل الرئيسي ---
-
 def main():
     print("⏳ جاري تشغيل البوت...")
 
