@@ -1,4 +1,4 @@
-import telegram
+sk-or-v1-588...12dimport telegram
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import asyncio
 import http.server
