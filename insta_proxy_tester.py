@@ -1,4 +1,4 @@
-hereimport telegram
+import telegram
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import asyncio
 import http.server
