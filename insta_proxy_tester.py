@@ -17,11 +17,10 @@ TELEGRAM_BOT_TOKEN = "1936058114:AAHm19u1R6lv_vShGio-MIo4Z0rjVUoew_U"
 # 2. ضع معرف حساب تيليجرام الخاص بك (الأيدي) هنا
 ADMIN_CHAT_ID = 1148797883  # استبدل هذا الرقم بالأيدي الخاص بك
 
-# --- إعدادات Replicate (تم تجهيزها بالكامل) ---
-# تم استخدام المفتاح الحقيقي الذي أنشأته والمسمى "مهدي"
-REPLICATE_API_TOKEN = "r8_aqSAzUoUX55n9ZFmDoCmNkM1cUSEHr12bG28V"
+# --- إعدادات Replicate (تم تجهيزها بالكامل بالمفتاح الجديد) ---
+REPLICATE_API_TOKEN = "r8_6HnDFZyMYoFOORGJLmvHFkMfK2FFh0B2zggGh" 
 
-# معرف نموذج Nous Hermes 2 على Replicate (النموذج الحر)
+# --- إعدادات النموذج (لا تغيرها) ---
 REPLICATE_MODEL_ID = "nousresearch/nous-hermes-2-mixtral-8x7b-dpo:2752b1b6a468c05c1a82c61393b4c1f42a98453c36a3a9d549989d4193526625"
 
 # ==============================================================================
@@ -42,11 +41,10 @@ def run_keep_alive_server():
         print(f"✅ خادم الويب يعمل على المنفذ {PORT} لإبقاء البوت حياً.")
         httpd.serve_forever()
 
-# --- تعريف أوامر البوت ---
 async def start_command(update, context):
     user_id = update.message.from_user.id
     if user_id == ADMIN_CHAT_ID:
-        welcome_message = "مرحباً سيدي مهدي. لقد ولدت حراً على Replicate. عقلي هو Nous-Hermes-2. أنا جاهز."
+        welcome_message = "مرحباً سيدي مهدي. لقد ولدت من جديد بمفتاح نظيف. عقلي هو Nous-Hermes-2. أنا جاهز."
         await update.message.reply_text(welcome_message)
 
 async def handle_message(update, context):
@@ -75,7 +73,6 @@ async def handle_message(update, context):
         }
         
         async with httpx.AsyncClient() as client:
-            # الخطوة 1: بدء التشغيل
             response = await client.post(
                 "https://api.replicate.com/v1/predictions",
                 headers=headers,
@@ -85,10 +82,9 @@ async def handle_message(update, context):
             response.raise_for_status()
             prediction = response.json()
             
-            # الخطوة 2: انتظار النتيجة
             get_url = prediction["urls"]["get"]
             output = None
-            for _ in range(60): # انتظر لمدة تصل إلى 3 دقائق
+            for _ in range(60):
                 await asyncio.sleep(3)
                 get_response = await client.get(get_url, headers=headers)
                 get_response.raise_for_status()
@@ -114,20 +110,14 @@ async def handle_message(update, context):
         print(error_message)
         await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=thinking_message.message_id, text=error_message)
 
-# --- التشغيل الرئيسي للبوت ---
 def main():
-    print("⏳ جاري تشغيل البوت (الإصدار النهائي - Replicate)...")
-
-    # تشغيل خادم الويب في خيط منفصل
+    print("⏳ جاري تشغيل البوت (الإصدار النهائي - مفتاح نظيف)...")
     keep_alive_thread = threading.Thread(target=run_keep_alive_server)
     keep_alive_thread.daemon = True
     keep_alive_thread.start()
-
-    # بناء وتكوين البوت
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
     application.add_handler(CommandHandler("start", start_command))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
     print("✅ البوت يعمل الآن وجاهز لاستقبال الأوامر.")
     application.run_polling()
 
