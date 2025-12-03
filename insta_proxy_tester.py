@@ -13,7 +13,7 @@ TELEGRAM_BOT_TOKEN = "1936058114:AAHm19u1R6lv_vShGio-MIo4Z0rjVUoew_U"
 ADMIN_CHAT_ID = 1148797883
 
 # --- متغيرات الحالة والقلب القابل للتبديل ---
-current_api_key = "sk-or-v1-588...12d" # <--- ضع مفتاحك الكامل هنا
+current_api_key = "sk-or-v1-76a...b46" # <--- ضع مفتاحك الكامل هنا
 bot_state = "NORMAL"
 
 # --- إعدادات خادم الويب (تبقى كما هي) ---
