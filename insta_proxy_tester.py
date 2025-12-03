@@ -37,7 +37,7 @@ def run_keep_alive_server():
 async def start_command(update, context):
     user_id = update.message.from_user.id
     if user_id == ADMIN_CHAT_ID:
-        welcome_message = "مرحباً سيدي مهدي. لقد ولدت من جديد. أعمل الآن بعقل Deepseek v3.2 عبر Fireworks AI. (الإصدار 11 - النهائي)"
+        welcome_message = "مرحباً سيدي مهدي. أعمل الآن بعقل Deepseek. (الإصدار 12 - النهائي)"
         await update.message.reply_text(welcome_message)
 
 async def handle_message(update, context):
@@ -53,12 +53,12 @@ async def handle_message(update, context):
         headers = {
             "Authorization": f"Bearer {FIREWORKS_API_KEY}",
             "Content-Type": "application/json",
-            "Accept": "application/json", # إضافة من الكود الذي وجدته
+            "Accept": "application/json",
         }
-        # استخدام الإعدادات الدقيقة التي وجدتها
         data = {
-            "model": "accounts/fireworks/models/deepseek-v3p2", # <-- الاسم الصحيح الذي وجدته
-            "max_tokens": 16384, # قيمة آمنة وكبيرة
+            "model": "accounts/fireworks/models/deepseek-v3p2",
+            # !!! الإصلاح هنا: قمنا بتغيير max_tokens إلى 4096 !!!
+            "max_tokens": 4096,
             "top_p": 1,
             "top_k": 40,
             "presence_penalty": 0,
@@ -94,7 +94,7 @@ async def handle_message(update, context):
 
 # --- التشغيل الرئيسي ---
 def main():
-    print("⏳ جاري تشغيل البوت (الإصدار 11 - النهائي الحقيقي)...")
+    print("⏳ جاري تشغيل البوت (الإصدار 12 - النهائي السليم)...")
 
     keep_alive_thread = threading.Thread(target=run_keep_alive_server)
     keep_alive_thread.daemon = True
