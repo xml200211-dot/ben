@@ -18,7 +18,7 @@ TELEGRAM_BOT_TOKEN = "1936058114:AAHm19u1R6lv_vShGio-MIo4Z0rjVUoew_U"
 ADMIN_CHAT_ID = 1148797883  # استبدل هذا الرقم بالأيدي الخاص بك
 
 # --- إعدادات Replicate (تم تجهيزها بالكامل بالمفتاح الجديد) ---
-REPLICATE_API_TOKEN = "r8_6HnDFZyMYoFOORGJLmvHFkMfK2FFh0B2zggGh" 
+REPLICATE_API_TOKEN = "r8_dYYdGQiviX6NKpJfmUnKxGHew7OfbaC3De8Jx" 
 
 # --- إعدادات النموذج (لا تغيرها) ---
 REPLICATE_MODEL_ID = "nousresearch/nous-hermes-2-mixtral-8x7b-dpo:2752b1b6a468c05c1a82c61393b4c1f42a98453c36a3a9d549989d4193526625"
